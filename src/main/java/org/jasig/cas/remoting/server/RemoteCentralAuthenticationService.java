@@ -47,9 +47,8 @@ import org.springframework.util.Assert;
  * <ul>
  * <li>centralAuthenticationService - the service layer we are delegating to.</li>
  * </ul>
- *
+ * 
  * @author Scott Battaglia
-
  * @since 3.0
  */
 public final class RemoteCentralAuthenticationService implements CentralAuthenticationService {
@@ -64,12 +63,13 @@ public final class RemoteCentralAuthenticationService implements CentralAuthenti
 
     /**
      * {@inheritDoc}
+     * 
      * @throws IllegalArgumentException if the Credentials are null or if given
-     * invalid credentials.
+     *             invalid credentials.
      */
     @Override
-    public String createTicketGrantingTicket(final Credential... credentials)
-            throws AuthenticationException, TicketException {
+    public String createTicketGrantingTicket(final Credential... credentials) throws AuthenticationException,
+            TicketException {
 
         Assert.notNull(credentials, "credentials cannot be null");
         checkForErrors(credentials);
@@ -81,19 +81,18 @@ public final class RemoteCentralAuthenticationService implements CentralAuthenti
      * {@inheritDoc}
      */
     @Override
-    public String grantServiceTicket(final String ticketGrantingTicketId, final Service service)
-            throws TicketException {
+    public String grantServiceTicket(final String ticketGrantingTicketId, final Service service) throws TicketException {
         return this.centralAuthenticationService.grantServiceTicket(ticketGrantingTicketId, service);
     }
 
     /**
      * {@inheritDoc}
+     * 
      * @throws IllegalArgumentException if given invalid credentials
      */
     @Override
-    public String grantServiceTicket(
-            final String ticketGrantingTicketId, final Service service, final Credential... credentials)
-            throws AuthenticationException, TicketException {
+    public String grantServiceTicket(final String ticketGrantingTicketId, final Service service,
+            final Credential... credentials) throws AuthenticationException, TicketException {
 
         checkForErrors(credentials);
 
@@ -110,10 +109,12 @@ public final class RemoteCentralAuthenticationService implements CentralAuthenti
 
     /**
      * {@inheritDoc}
-     * <p>Destroy a TicketGrantingTicket and perform back channel logout. This has the effect of invalidating any
-     * Ticket that was derived from the TicketGrantingTicket being destroyed. May throw an
+     * <p>
+     * Destroy a TicketGrantingTicket and perform back channel logout. This has
+     * the effect of invalidating any Ticket that was derived from the
+     * TicketGrantingTicket being destroyed. May throw an
      * {@link IllegalArgumentException} if the TicketGrantingTicket ID is null.
-     *
+     * 
      * @param ticketGrantingTicketId the id of the ticket we want to destroy
      * @return the logout requests.
      */
@@ -124,6 +125,7 @@ public final class RemoteCentralAuthenticationService implements CentralAuthenti
 
     /**
      * {@inheritDoc}
+     * 
      * @throws IllegalArgumentException if the credentials are invalid.
      */
     @Override
@@ -150,21 +152,26 @@ public final class RemoteCentralAuthenticationService implements CentralAuthenti
 
     /**
      * Set the CentralAuthenticationService.
-     *
+     * 
      * @param centralAuthenticationService The CentralAuthenticationService to
-     * set.
+     *            set.
      */
-    public void setCentralAuthenticationService(
-        final CentralAuthenticationService centralAuthenticationService) {
+    public void setCentralAuthenticationService(final CentralAuthenticationService centralAuthenticationService) {
         this.centralAuthenticationService = centralAuthenticationService;
     }
 
     /**
      * Set the list of validators.
-     *
+     * 
      * @param validator The array of validators to use.
      */
     public void setValidator(final Validator validator) {
         this.validator = validator;
+    }
+
+    @Override
+    public Assertion validateServiceTicket(String serviceTicketId, Service service, String sysName)
+            throws TicketException {
+        return null;
     }
 }

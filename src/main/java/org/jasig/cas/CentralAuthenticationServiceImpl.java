@@ -18,12 +18,18 @@
  */
 package org.jasig.cas;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+
 import javax.validation.constraints.NotNull;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.github.inspektr.audit.annotation.Audit;
 import org.apache.commons.lang.StringUtils;
 import org.jasig.cas.authentication.AcceptAnyAuthenticationPolicyFactory;
@@ -59,6 +65,8 @@ import org.jasig.cas.ticket.TicketGrantingTicketImpl;
 import org.jasig.cas.ticket.TicketValidationException;
 import org.jasig.cas.ticket.UnsatisfiedAuthenticationPolicyException;
 import org.jasig.cas.ticket.registry.TicketRegistry;
+import org.jasig.cas.util.PropertiesUtil;
+import org.jasig.cas.util.SimpleHttpClient;
 import org.jasig.cas.util.UniqueTicketIdGenerator;
 import org.jasig.cas.validation.Assertion;
 import org.jasig.cas.validation.ImmutableAssertion;
@@ -397,7 +405,8 @@ public final class CentralAuthenticationServiceImpl implements CentralAuthentica
     @Audit(action = "SERVICE_TICKET_VALIDATE", actionResolverName = "VALIDATE_SERVICE_TICKET_RESOLVER", resourceResolverName = "VALIDATE_SERVICE_TICKET_RESOURCE_RESOLVER")
     @Profiled(tag = "VALIDATE_SERVICE_TICKET", logFailuresSeparately = false)
     @Transactional(readOnly = false)
-    public Assertion validateServiceTicket(final String serviceTicketId, final Service service) throws TicketException {
+    public Assertion validateServiceTicket(final String serviceTicketId, final Service service, final String sysName)
+            throws TicketException {
         Assert.notNull(serviceTicketId, "serviceTicketId cannot be null");
         Assert.notNull(service, "service cannot be null");
 
@@ -433,19 +442,44 @@ public final class CentralAuthenticationServiceImpl implements CentralAuthentica
 
             logger.info("authentication principal===>" + principal.getId());
 
-            Map<String, Object> attributesToRelease = this.defaultAttributeFilter.filter(principal.getId(), principal
-                    .getAttributes(), registeredService);
-            if (registeredService.getAttributeFilter() != null) {
-                attributesToRelease = registeredService.getAttributeFilter().filter(principal.getId(),
-                        attributesToRelease, registeredService);
+            /**
+             * hacked here:在这里通过http的方式去获取后台配置的用户权限
+             */
+
+            /**
+             * 如果sysName非空的话，处理其权限和角色信息
+             */
+            final Map<String, Object> attributeMap = new LinkedHashMap<String, Object>();
+            if (StringUtils.isNotBlank(sysName)) {
+                SimpleHttpClient hc = new SimpleHttpClient();
+
+                String url = PropertiesUtil.getInstance().getProperty("validUrl");
+                url = url + "userName=" + principal.getId() + "&systemName=" + sysName;
+                logger.info("get user's validationUrl:" + url);
+                try {
+                    String response = hc.getRights(new URL(url));
+                    logger.info("get response for user[" + principal.getId() + "]:" + response);
+                    JSONObject json = JSONObject.parseObject(response);
+                    if (json != null) {
+                        attributeMap.put("roles", json.get("roles").toString());
+                        attributeMap.put("permissions", json.get("permissions").toString());
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
             }
 
-            final Map<String, Object> attributeMap = new LinkedHashMap<String, Object>(10);
-            attributeMap.put("roles", "push-pc");
-
-            logger
-                    .info("attributeMap's size:" + attributeMap.size() + "|value:"
-                            + attributeMap.get("roles").toString());
+            /**
+             * Map<String, Object> attributesToRelease =
+             * this.defaultAttributeFilter.filter(principal.getId(), principal
+             * .getAttributes(), registeredService); if
+             * (registeredService.getAttributeFilter() != null) {
+             * attributesToRelease =
+             * registeredService.getAttributeFilter().filter(principal.getId(),
+             * attributesToRelease, registeredService); }
+             **/
 
             final String principalId = determinePrincipalIdForRegisteredService(principal, registeredService,
                     serviceTicket);
@@ -599,5 +633,10 @@ public final class CentralAuthenticationServiceImpl implements CentralAuthentica
             logger.warn(msg);
             throw new UnauthorizedServiceException(UnauthorizedServiceException.CODE_UNAUTHZ_SERVICE, msg);
         }
+    }
+
+    @Override
+    public Assertion validateServiceTicket(String serviceTicketId, Service service) throws TicketException {
+        return null;
     }
 }

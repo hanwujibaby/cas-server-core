@@ -58,16 +58,17 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
     private static final long serialVersionUID = -5306738686476129516L;
 
     /** The default status codes we accept. */
-    private static final int[] DEFAULT_ACCEPTABLE_CODES = new int[] {
-        HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_NOT_MODIFIED,
-        HttpURLConnection.HTTP_MOVED_TEMP, HttpURLConnection.HTTP_MOVED_PERM,
-        HttpURLConnection.HTTP_ACCEPTED};
+    private static final int[] DEFAULT_ACCEPTABLE_CODES = new int[] { HttpURLConnection.HTTP_OK,
+            HttpURLConnection.HTTP_NOT_MODIFIED, HttpURLConnection.HTTP_MOVED_TEMP, HttpURLConnection.HTTP_MOVED_PERM,
+            HttpURLConnection.HTTP_ACCEPTED };
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleHttpClient.class);
 
     private static ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(100);
 
-    /** List of HTTP status codes considered valid by this AuthenticationHandler. */
+    /**
+     * List of HTTP status codes considered valid by this AuthenticationHandler.
+     */
     @NotNull
     @Size(min = 1)
     private int[] acceptableCodes = DEFAULT_ACCEPTABLE_CODES;
@@ -81,24 +82,28 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
     private boolean followRedirects = true;
 
     /**
-     * The socket factory to be used when verifying the validity of the endpoint.
-     *
+     * The socket factory to be used when verifying the validity of the
+     * endpoint.
+     * 
      * @see #setSSLSocketFactory(SSLSocketFactory)
      */
     private SSLSocketFactory sslSocketFactory = null;
 
     /**
-     * The hostname verifier to be used when verifying the validity of the endpoint.
-     *
+     * The hostname verifier to be used when verifying the validity of the
+     * endpoint.
+     * 
      * @see #setHostnameVerifier(HostnameVerifier)
      */
     private HostnameVerifier hostnameVerifier = null;
 
     /**
-     * Note that changing this executor will affect all httpClients.  While not ideal, this change
-     * was made because certain ticket registries
-     * were persisting the HttpClient and thus getting serializable exceptions.
-     * @param executorService The executor service to send messages to end points.
+     * Note that changing this executor will affect all httpClients. While not
+     * ideal, this change was made because certain ticket registries were
+     * persisting the HttpClient and thus getting serializable exceptions.
+     * 
+     * @param executorService The executor service to send messages to end
+     *            points.
      */
     public void setExecutorService(@NotNull final ExecutorService executorService) {
         Assert.notNull(executorService);
@@ -106,19 +111,22 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
     }
 
     /**
-     * Sends a message to a particular endpoint.  Option of sending it without
+     * Sends a message to a particular endpoint. Option of sending it without
      * waiting to ensure a response was returned.
      * <p>
-     * This is useful when it doesn't matter about the response as you'll perform no action based on the response.
-     *
+     * This is useful when it doesn't matter about the response as you'll
+     * perform no action based on the response.
+     * 
      * @param url the url to send the message to
      * @param message the message itself
-     * @param async true if you don't want to wait for the response, false otherwise.
-     * @return boolean if the message was sent, or async was used.  false if the message failed.
+     * @param async true if you don't want to wait for the response, false
+     *            otherwise.
+     * @return boolean if the message was sent, or async was used. false if the
+     *         message failed.
      */
     public boolean sendMessageToEndPoint(final String url, final String message, final boolean async) {
-        final Future<Boolean> result = EXECUTOR_SERVICE.submit(new MessageSender(url, message,
-                this.readTimeout, this.connectionTimeout, this.followRedirects));
+        final Future<Boolean> result = EXECUTOR_SERVICE.submit(new MessageSender(url, message, this.readTimeout,
+                this.connectionTimeout, this.followRedirects));
 
         if (async) {
             return true;
@@ -133,7 +141,7 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
 
     /**
      * Make a synchronous HTTP(S) call to ensure that the url is reachable.
-     *
+     * 
      * @param url the url to call
      * @return whether the url is valid
      */
@@ -147,9 +155,31 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
         }
     }
 
+    public String getRights(final URL url) {
+        HttpURLConnection connection = null;
+        InputStream is = null;
+        String resp = null;
+
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(this.connectionTimeout);
+            connection.setReadTimeout(this.readTimeout);
+            connection.connect();
+            is=connection.getInputStream();
+            resp =IOUtils.toString(is);
+            return resp;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            connection.disconnect();
+            IOUtils.closeQuietly(is);
+            return resp;
+        }
+    }
+
     /**
      * Make a synchronous HTTP(S) call to ensure that the url is reachable.
-     *
+     * 
      * @param url the url to call
      * @return whether the url is valid
      */
@@ -188,12 +218,13 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
             LOGGER.debug("Response Code did not match any of the acceptable response codes. Code returned was {}",
                     responseCode);
 
-            // if the response code is an error and we don't find that error acceptable above:
+            // if the response code is an error and we don't find that error
+            // acceptable above:
             if (responseCode == 500) {
                 is = connection.getInputStream();
                 final String value = IOUtils.toString(is);
-                LOGGER.error("There was an error contacting the endpoint: {}; The error was:\n{}", url.toExternalForm(),
-                        value);
+                LOGGER.error("There was an error contacting the endpoint: {}; The error was:\n{}",
+                        url.toExternalForm(), value);
             }
         } catch (final IOException e) {
             LOGGER.error(e.getMessage(), e);
@@ -209,7 +240,7 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
     /**
      * Set the acceptable HTTP status codes that we will use to determine if the
      * response from the URL was correct.
-     *
+     * 
      * @param acceptableCodes an array of status code integers.
      */
     public void setAcceptableCodes(final int[] acceptableCodes) {
@@ -217,7 +248,9 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
     }
 
     /**
-     * Sets a specified timeout value, in milliseconds, to be used when opening the endpoint url.
+     * Sets a specified timeout value, in milliseconds, to be used when opening
+     * the endpoint url.
+     * 
      * @param connectionTimeout specified timeout value in milliseconds
      */
     public void setConnectionTimeout(final int connectionTimeout) {
@@ -225,7 +258,9 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
     }
 
     /**
-     * Sets a specified timeout value, in milliseconds, to be used when reading from the endpoint url.
+     * Sets a specified timeout value, in milliseconds, to be used when reading
+     * from the endpoint url.
+     * 
      * @param readTimeout specified timeout value in milliseconds
      */
     public void setReadTimeout(final int readTimeout) {
@@ -234,7 +269,7 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
 
     /**
      * Determines the behavior on receiving 3xx responses from HTTP endpoints.
-     *
+     * 
      * @param follow True to follow 3xx redirects (default), false otherwise.
      */
     public void setFollowRedirects(final boolean follow) {
@@ -242,8 +277,9 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
     }
 
     /**
-     * Set the SSL socket factory be used by the URL when submitting
-     * request to check for URL endpoint validity.
+     * Set the SSL socket factory be used by the URL when submitting request to
+     * check for URL endpoint validity.
+     * 
      * @param factory ssl socket factory instance to use
      * @see #isValidEndPoint(URL)
      */
@@ -252,8 +288,9 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
     }
 
     /**
-     * Set the hostname verifier be used by the URL when submitting
-     * request to check for URL endpoint validity.
+     * Set the hostname verifier be used by the URL when submitting request to
+     * check for URL endpoint validity.
+     * 
      * @param verifier hostname verifier instance to use
      * @see #isValidEndPoint(URL)
      */
@@ -263,6 +300,7 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
 
     /**
      * Shutdown the executor service.
+     * 
      * @throws Exception if the executor cannot properly shut down
      */
     public void destroy() throws Exception {
@@ -316,7 +354,7 @@ public final class SimpleHttpClient implements HttpClient, Serializable, Disposa
 
                 boolean readInput = true;
                 while (readInput) {
-                    readInput =StringUtils.isNotBlank(in.readLine());
+                    readInput = StringUtils.isNotBlank(in.readLine());
                 }
 
                 LOGGER.debug("Finished sending message to {}", url);

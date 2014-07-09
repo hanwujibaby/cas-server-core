@@ -21,8 +21,9 @@ package org.jasig.cas.audit.spi;
 import java.util.Arrays;
 
 import org.aspectj.lang.JoinPoint;
-import com.github.inspektr.audit.spi.AuditResourceResolver;
 import org.jasig.cas.util.AopUtils;
+
+import com.github.inspektr.audit.spi.AuditResourceResolver;
 
 /**
  * Converts the Credential object into a String resource identifier.

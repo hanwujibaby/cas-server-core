@@ -18,6 +18,7 @@ org/jasig/cas/ticket/TicketGrantingTicketImpl.class
 org/jasig/cas/Message.class
 org/jasig/cas/monitor/AbstractNamedMonitor.class
 org/jasig/cas/util/DefaultUniqueTicketIdGenerator.class
+com/tv/sohu/validation/util/ValidationUtil.class
 org/jasig/cas/authentication/handler/UncategorizedAuthenticationException.class
 org/jasig/cas/util/PrivateKeyFactoryBean.class
 org/jasig/cas/util/SpringAwareMessageMessageInterpolator.class
@@ -198,6 +199,7 @@ org/jasig/cas/validation/Cas20WithoutProxyingValidationSpecification.class
 org/jasig/cas/ticket/InvalidTicketException.class
 org/jasig/cas/audit/spi/ServiceResourceResolver.class
 org/jasig/cas/ticket/registry/AbstractDistributedTicketRegistry.class
+org/jasig/cas/util/PropertiesUtil.class
 org/jasig/cas/authentication/handler/AuthenticationException.class
 org/jasig/cas/logout/LogoutMessageCreator.class
 org/jasig/cas/logout/LogoutManagerImpl.class
